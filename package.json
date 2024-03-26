@@ -1,0 +1,50 @@
+{
+  "name": "react-hook-form-jsonschema-builder",
+  "version": "1.1.0",
+  "description": "use jsonschema Dynamic form for react-hook-form",
+  "license": "MIT",
+  "keywords": [
+    "react",
+    "react-hook-form",
+    "jsonschema"
+  ],
+  "author": "pengyin <674891229@qq.com>",
+  "homepage": "https://github.com/peng-yin/react-hook-form-jsonschema-builder",
+  "repository": "https://github.com/peng-yin/react-hook-form-jsonschema-builder.git",
+  "bugs": "https://github.com/peng-yin/react-hook-form-jsonschema-builder/issues",
+  "main": "dist/react-hook-form-jsonschema-builder.cjs.js",
+  "module": "dist/react-hook-form-jsonschema-builder.esm.js",
+  "types": "dist/react-hook-form-jsonschema-builder.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "rm -rf dist && rollup -c --configPlugin @rollup/plugin-typescript"
+  },
+  "peerDependencies": {
+    "react": ">=16.8.0"
+  },
+  "devDependencies": {
+    "@rollup/plugin-typescript": "^11.1.3",
+    "@types/node": "^20.6.2",
+    "@types/react": "^18.2.21",
+    "@types/react-dom": "^18.2.7",
+    "autoprefixer": "^10.4.15",
+    "eslint": "^8.49.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-config-react-app": "^7.0.1",
+    "prettier": "^3.0.3",
+    "prettier-plugin-organize-imports": "^3.2.3",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "rollup": "^3.29.2",
+    "rollup-plugin-dts": "^6.0.2",
+    "rollup-plugin-postcss": "^4.0.2",
+    "rollup-plugin-terser": "^7.0.2",
+    "tslib": "^2.6.2",
+    "typescript": "^5.2.2"
+  },
+  "dependencies": {
+    "react-hook-form": "^7.51.2"
+  }
+}
