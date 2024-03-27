@@ -4,6 +4,7 @@
 
 use jsonschema Dynamic form for react-hook-form
 
+[![npm](https://img.shields.io/npm/v/react-hook-form-jsonschema-builder)](https://www.npmjs.com/package/react-hook-form-jsonschema-builderd)
 [![GitHub](https://img.shields.io/github/license/peng-yin/react-hook-form-jsonschema?style=flat-square)](https://github.com/peng-yin/react-hook-form-jsonschema/blob/main/LICENSE)
 [![npm type definitions](https://img.shields.io/npm/types/typescript?style=flat-square)](https://github.com/peng-yin/react-hook-form-jsonschema/blob/main/src/types.ts)
 
