@@ -12,17 +12,17 @@ use jsonschema Dynamic form for react-hook-form
 ## Install
 
 ```sh
-pnpm add @react-hook-form/jsonschema
+pnpm add react-hook-form-json-schema
 # or
-yarn add @react-hook-form/jsonschema
+yarn add react-hook-form-json-schema
 # or
-npm i @react-hook-form/jsonschema
+npm i react-hook-form-json-schema
 ```
 
 ## Usage
 
 ```jsx
-import FormRender, { useForm } from '@react-hook-form/jsonschema';
+import FormRender, { useForm } from 'react-hook-form-json-schema';
 
 const Demo = () => {
   const formInstance = useForm({
@@ -45,7 +45,7 @@ const Demo = () => {
 
 ## try
 
-[![Edit @react-hook-form/jsonschema](https://codesandbox.io/static/img/play-codesandbox.svg)](https://codesandbox.io/p/sandbox/react-hook-form-jsonschema-98ssg5?fontsize=14&hidenavigation=1&theme=dark)
+[![Edit react-hook-form-json-schema](https://codesandbox.io/static/img/play-codesandbox.svg)](https://codesandbox.io/p/sandbox/react-hook-form-jsonschema-98ssg5?fontsize=14&hidenavigation=1&theme=dark)
 
 ## Props
 
