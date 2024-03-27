@@ -1,5 +1,5 @@
 {
-  "name": "react-hook-form-json-schema",
+  "name": "react-hook-form-jsonschema-builder",
   "version": "1.0.0",
   "description": "use jsonschema Dynamic form for react-hook-form",
   "license": "MIT",
