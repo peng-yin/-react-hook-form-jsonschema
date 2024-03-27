@@ -1,6 +1,6 @@
 {
-  "name": "@react-hook-form/jsonschema",
-  "version": "1.0.0",
+  "name": "react-hook-form-jsonschema-builder",
+  "version": "1.1.2",
   "description": "use jsonschema Dynamic form for react-hook-form",
   "license": "MIT",
   "keywords": [
@@ -9,12 +9,12 @@
     "jsonschema"
   ],
   "author": "pengyin <674891229@qq.com>",
-  "homepage": "https://github.com/peng-yin/react-hook-form-jsonschema",
-  "repository": "https://github.com/peng-yin/react-hook-form-jsonschema.git",
-  "bugs": "https://github.com/peng-yin/react-hook-form-jsonschema/issues",
-  "main": "dist/react-hook-form-jsonschema.cjs.js",
-  "module": "dist/react-hook-form-jsonschema.esm.js",
-  "types": "dist/react-hook-form-jsonschema.d.ts",
+  "homepage": "https://github.com/peng-yin/react-hook-form-jsonschema-builder",
+  "repository": "https://github.com/peng-yin/react-hook-form-jsonschema-builder.git",
+  "bugs": "https://github.com/peng-yin/react-hook-form-jsonschema-builder/issues",
+  "main": "dist/react-hook-form-jsonschema-builder.cjs.js",
+  "module": "dist/react-hook-form-jsonschema-builder.esm.js",
+  "types": "dist/react-hook-form-jsonschema-builder.d.ts",
   "files": [
     "dist"
   ],

@@ -1,15 +1,65 @@
-import React, { useMemo, Context } from "react";
-import { Controller, useForm, UseFormReturn, FieldValues, ControllerRenderProps } from 'react-hook-form';
+// @ts-nocheck
+import React from "react";
+import { Control, FieldValues, useForm, UseFormReturn, Controller } from 'react-hook-form';
 
-export interface FormControllerContextValue {
-  componentsMap?: Record<string, React.ComponentType<any>>;
-  middlewares?: Function[];
+export interface FormItemProps {
+  errorClassName?: string;
+  control: Control<FieldValues>; 
+  [key: string]: any; // 允许额外的属性
 }
 
-export const FormControllerContext: Context<FormControllerContextValue> = React.createContext({});
+export interface SchemaItem {
+  field: string;
+  component: React.ElementType | React.ReactNode;
+  componentProps: Record<string, any>;
+  formItemProps?: FormItemProps;
+}
 
-export const withValueAsNumber = <P extends object>(WrappedComponent: React.ComponentType<P>) => React.forwardRef<any, P & { onChange?: (value: number) => void }>((props, ref) => {
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+export interface FormRenderProps {
+  form: UseFormReturn<FieldValues>;
+  schema: SchemaItem[];
+  dataSource: Record<string, any>; 
+}
+
+export interface FormItemControllerProps {
+  field: string;
+  errors?:  Record<string, any>; 
+  component: string | React.ReactNode;
+  componentProps?: Record<string, any>;
+  formItemProps?: {
+    control?: Control<FieldValues>;
+    errorClassName?: string;
+    [key: string]: any;
+  };
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+}
+
+interface ErrorBoundaryProps {
+  children: React.ReactNode;
+}
+
+export interface Middleware {
+  hoc: (component: React.ComponentType) => React.ComponentType;
+  filter: (props: Record<string, any>) => boolean;
+}
+
+export interface FormControllerContextValue {
+  componentsMap?: Record<string, React.ComponentType>;
+  middlewares?: Middleware[];
+  functionMap?: { [key: string]: (...args: any[]) => any };
+}
+
+export const FormControllerContext = React.createContext<FormControllerContextValue>({});
+
+type WithValueAsNumberProps = {
+  onChange?: (value: number) => void;
+};
+
+const withValueAsNumber: React.FC<WithValueAsNumberProps> = WrappedComponent => React.forwardRef((props, ref) => {
+  const handleChange = (e: any) => {
     if (typeof props.onChange === 'function') {
       props.onChange(parseInt(e.target.value, 10));
     }
@@ -17,78 +67,70 @@ export const withValueAsNumber = <P extends object>(WrappedComponent: React.Comp
   return <WrappedComponent {...props} ref={ref} onChange={handleChange} />;
 });
 
-interface FunctionMap {
-  [key: string]: (...args: any[]) => any;
-}
+const internalMiddleware:Middleware[] = [{
+  hoc: withValueAsNumber,
+  filter(props) {
+    return props.valueAsNumber
+  }
+}]
 
-const functionMap: FunctionMap = {
+const customFunctionMap:Record<string, Function> = {
   getDynamicCommon: value => value,
-  getDynamicTip: (similarViewDate: string) => {
-    return `${similarViewDate} 前的已审核素材，“聚类”审核视图下不支持查询`;
-  },
-  // 可以在这里添加更多的函数映射
 };
 
-function compose(...funcs: Function[]) {
+function compose(...funcs:Function[]): Function {
   if (funcs.length === 0) {
-    return (arg: any) => arg
+    return arg => arg
   }
 
   if (funcs.length === 1) {
     return funcs[0]
   }
 
-  return funcs.reduce((a, b) => (...args: any[]) => a(b(...args)));
+  return funcs.reduce((a, b) => (...args) => a(b(...args)));
 }
 
-interface ComponentProps {
-  component: React.ComponentType<any> | string;
-  valueAsNumber?: boolean;
-  [key: string]: any;
-}
+const Component: React.FC = React.forwardRef(({ component, ...props }, ref) => {
+  const { componentsMap = {}, middlewares = [] } = React.useContext(FormControllerContext)
 
-export const Component = React.forwardRef<any, ComponentProps>(({ component, ...props }, ref) => {
-  const { componentsMap = {}, middlewares = [] } = React.useContext(FormControllerContext);
-
-  const EnhancedComponent: React.ComponentType<any> | null = useMemo(() => {
+  const EnhancedComponent = React.useMemo(() => {
+   
     if (React.isValidElement(component)) {
-      return component as React.ComponentType<any>;
+      return component
     }
     
     if (typeof component === 'string') {
       if (!componentsMap || !Object.keys(componentsMap).includes(component)){
-         console.warn('未找到对应的组件');
-         return null;
-      } else {
-        return componentsMap[component];
+        throw new Error(`未找到对应的组件: ${component}`);
       }
     }
+    
+    const NewComponent =  componentsMap[component];
+    const middlewareList = [...internalMiddleware, ...middlewares].reduce((prev, middleware) => {
+      const { hoc, filter } = middleware;
+      if (typeof hoc !== 'function' || typeof filter !== 'function') {
+        throw new Error('Middleware HOC or Middleware Filter is not a function');
+      }
+      if (filter(props)) {
+        prev.push(hoc);
+      }
+      return prev;
+    }, []);
 
-    if (props.valueAsNumber) {
-      return withValueAsNumber(component as React.ComponentType<any>);
-    }
+    return compose(...middlewareList)(NewComponent);
+  }, [component, internalMiddleware, middlewares, componentsMap]);
 
-    return compose(...middlewares)(component as React.ComponentType<any>);
-  }, [component, props.valueAsNumber, componentsMap, middlewares]);
-
-  return EnhancedComponent ? <EnhancedComponent {...props} ref={ref} /> : null;
+  return <EnhancedComponent {...props} ref={ref} />;
 });
 
-interface FormItemControllerProps {
-  field: string;
-  errors?: Record<string, any>;
-  component: React.ComponentType<any> | string;
-  componentProps: any;
-  formItemProps: any;
-}
-
-export const FormItemController: React.FC<FormItemControllerProps> = (props) => {
+const FormItemController = React.forwardRef<HTMLDivElement, FormItemControllerProps>((props, ref) => {
   return (
     <>
       <Controller
+        ref={ref}
         name={props.field}
         {...props.formItemProps}
-        render={({ field }: { field: ControllerRenderProps }) => (
+        render={({ field }) => (
           <Component
             {...field}
             {...props.componentProps}
@@ -96,48 +138,51 @@ export const FormItemController: React.FC<FormItemControllerProps> = (props) => 
           />
         )}
       />
-      {props.errors?.[props.field] && (
-        <div className={props.formItemProps?.errorClassName}>{props.errors[props.field]?.message}</div>
+      {props?.errors?.[props.field] && (
+        <div className={props.formItemProps?.errorClassName}>{props?.errors?.[props.field]?.message}</div>
       )}
     </>
   )
-};
+});
 
-const parseFunctionMarker = (marker: string, formValues: Record<string, any>): any => {
+const parseFunctionMarker = (marker, formValues) => {
   const markerPattern = /#(\w+)\(([^)]*)\)/; // 匹配 #functionName(arg1, arg2, ...)
   const match = markerPattern.exec(marker);
   if (match) {
     const functionName = match[1];
     const args = match[2].split(',').map(arg => arg.trim()).map(arg => formValues[arg]);
-
-    if (functionMap[functionName]) {
-      return functionMap[functionName](...args);
+    const context = React.useContext(FormControllerContext)
+    const functionMap = { ...customFunctionMap, ...context?.functionMap };
+    if (!functionMap || !Object.keys(functionMap).includes(functionName)){
+      throw new Error(`未找到对应的函数: ${functionName}`);
     }
+    return functionMap[functionName](...args);
   }
   return null;
 };
 
-const evaluateExpression = (expression: string, values: Record<string, any>): any => {
+const evaluateExpression = (expression, values) => {
   const cleanedExpression = expression.replace(/{{|}}/g, '').trim();
   try {
     const keys = Object.keys(values);
     const args = keys.map(key => values[key]);
-    return new Function(...keys, `"use strict";return (${cleanedExpression})`)(...args);
+    return Function(...keys, `"use strict";return (${cleanedExpression})`)(...args);
   } catch (error) {
-    console.error('Error evaluating expression:', expression, error);
-    return false;
+    throw new Error(`Error evaluating expression: ${expression}`);
   }
 };
 
-const resolveComponentProps = (componentProps: Record<string, any>, dataSource: Record<string, any>): Record<string, any> => {
-  const resolvedProps: Record<string, any> = {};
+const resolveComponentProps = (componentProps, dataSource) => {
+  const resolvedProps = {};
   Object.keys(componentProps).forEach(key => {
     const value = componentProps[key];
     if (typeof value === 'string') {
       if (value.startsWith("#")) {
         resolvedProps[key] = parseFunctionMarker(value, dataSource);
-      } else if (key === 'disabled' || key === 'hidden') {
+      } else if (['disabled', 'hidden'].includes(key)) {
         resolvedProps[key] = evaluateExpression(value, dataSource);
+      } else if (key === 'data') {
+        resolvedProps[key] = dataSource?.[value];
       } else {
         resolvedProps[key] = value;
       }
@@ -149,24 +194,38 @@ const resolveComponentProps = (componentProps: Record<string, any>, dataSource: 
   return resolvedProps;
 };
 
-interface FormItemSchema {
-  field: string;
-  component: string;
-  componentProps: Record<string, unknown>;
-  formItemProps?: Record<string, unknown>;
+class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true };
+  }
+  componentDidCatch(error, errorInfo) {
+    console.error('ErrorBoundary caught an error', error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return <h1>FormItem rendering error.</h1>;
+    }
+
+    return this.props.children;
+  }
 }
 
-interface FormRenderProps {
-  form: UseFormReturn<FieldValues>;
-  schema: FormItemSchema[];
-  dataSource: Record<string, any>;
-}
-
+/**
+ * 
+ * @param {*} form: FormInstance
+ * @param {*} schema： 表单配置
+ * @param {*} dataSource： 数据源
+ * @returns 
+ */
 const FormRender: React.FC<FormRenderProps> = ({ form, schema, dataSource }) => {
   if (!Array.isArray(schema)) {
     throw new Error('FormRender expects `schema` to be an array.');
   }
-  const { watch, control, formState: { errors } } = form;
+  const { watch, control, formState: { errors } } = form
   const formValues = watch(); // 获取所有表单字段的值
 
   return (
@@ -177,20 +236,21 @@ const FormRender: React.FC<FormRenderProps> = ({ form, schema, dataSource }) => 
           return null;
         }
         return (
-          <FormItemController
-            key={item.field} 
-            field={item.field}
-            errors={errors}
-            component={item.component}
-            componentProps={componentProps}
-            formItemProps={{ ...item.formItemProps, control }}
-          />
+          <ErrorBoundary key={item.field}>
+            <FormItemController
+              field={item.field}
+              errors={errors}
+              component={item.component}
+              componentProps={componentProps}
+              formItemProps={{ ...item.formItemProps, control }}
+            />
+          </ErrorBoundary>
         )
       })}
     </>
   )
 };
 
-export { useForm };
+export { useForm  }
 
 export default FormRender;
