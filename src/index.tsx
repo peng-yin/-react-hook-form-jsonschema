@@ -58,14 +58,14 @@ type WithValueAsNumberProps = {
   onChange?: (value: number) => void;
 };
 
-const withValueAsNumber: React.FC<WithValueAsNumberProps> = WrappedComponent => React.forwardRef((props, ref) => {
+const withValueAsNumber: React.FC<WithValueAsNumberProps> = WrappedComponent => (props, ref) => {
   const handleChange = (e: any) => {
     if (typeof props.onChange === 'function') {
       props.onChange(parseInt(e.target.value, 10));
     }
   };
   return <WrappedComponent {...props} ref={ref} onChange={handleChange} />;
-});
+};
 
 const internalMiddleware: Middleware[] = [{
   hoc: withValueAsNumber,
