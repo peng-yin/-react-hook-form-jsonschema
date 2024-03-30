@@ -4,7 +4,7 @@ import { Control, FieldValues, useForm, UseFormReturn, Controller } from 'react-
 
 export interface FormItemProps {
   errorClassName?: string;
-  control: Control<FieldValues>; 
+  control: Control<FieldValues>;
   [key: string]: any; // 允许额外的属性
 }
 
@@ -18,12 +18,12 @@ export interface SchemaItem {
 export interface FormRenderProps {
   form: UseFormReturn<FieldValues>;
   schema: SchemaItem[];
-  dataSource: Record<string, any>; 
+  dataSource: Record<string, any>;
 }
 
 export interface FormItemControllerProps {
   field: string;
-  errors?:  Record<string, any>; 
+  errors?: Record<string, any>;
   component: string | React.ReactNode;
   componentProps?: Record<string, any>;
   formItemProps?: {
@@ -67,18 +67,18 @@ const withValueAsNumber: React.FC<WithValueAsNumberProps> = WrappedComponent => 
   return <WrappedComponent {...props} ref={ref} onChange={handleChange} />;
 });
 
-const internalMiddleware:Middleware[] = [{
+const internalMiddleware: Middleware[] = [{
   hoc: withValueAsNumber,
   filter(props) {
     return props.valueAsNumber
   }
 }]
 
-const customFunctionMap:Record<string, Function> = {
+const customFunctionMap: Record<string, Function> = {
   getDynamicCommon: value => value,
 };
 
-function compose(...funcs:Function[]): Function {
+function compose(...funcs: Function[]): Function {
   if (funcs.length === 0) {
     return arg => arg
   }
@@ -90,22 +90,22 @@ function compose(...funcs:Function[]): Function {
   return funcs.reduce((a, b) => (...args) => a(b(...args)));
 }
 
-const Component: React.FC = React.forwardRef(({ component, ...props }, ref) => {
+const Component: React.FC = ({ component, ...props }) => {
   const { componentsMap = {}, middlewares = [] } = React.useContext(FormControllerContext)
 
   const EnhancedComponent = React.useMemo(() => {
-   
+
     if (React.isValidElement(component) || typeof component === 'object') {
       return component
     }
-    
+
     if (typeof component === 'string') {
-      if (!componentsMap || !Object.keys(componentsMap).includes(component)){
+      if (!componentsMap || !Object.keys(componentsMap).includes(component)) {
         throw new Error(`未找到对应的组件: ${component}`);
       }
     }
-    
-    const NewComponent =  componentsMap[component];
+
+    const NewComponent = componentsMap[component];
     const middlewareList = [...internalMiddleware, ...middlewares].reduce((prev, middleware) => {
       const { hoc, filter } = middleware;
       if (typeof hoc !== 'function' || typeof filter !== 'function') {
@@ -120,21 +120,21 @@ const Component: React.FC = React.forwardRef(({ component, ...props }, ref) => {
     return compose(...middlewareList)(NewComponent);
   }, [component, internalMiddleware, middlewares, componentsMap]);
 
-  return <EnhancedComponent {...props} ref={ref} />;
-});
+  return <EnhancedComponent {...props} />;
+};
 
-const FormItemController = React.forwardRef<HTMLDivElement, FormItemControllerProps>((props, ref) => {
+const FormItemController = React.forwardRef((props, ref) => {
   return (
     <>
       <Controller
-        ref={ref}
         name={props.field}
         {...props.formItemProps}
         render={({ field }) => (
           <Component
             {...field}
+            ref={ref} // ref覆盖解决warning
             {...props.componentProps}
-            component={props.component} 
+            component={props.component}
           />
         )}
       />
@@ -153,7 +153,7 @@ const parseFunctionMarker = (marker, formValues) => {
     const args = match[2].split(',').map(arg => arg.trim()).map(arg => formValues[arg]);
     const context = React.useContext(FormControllerContext)
     const functionMap = { ...customFunctionMap, ...context?.functionMap };
-    if (!functionMap || !Object.keys(functionMap).includes(functionName)){
+    if (!functionMap || !Object.keys(functionMap).includes(functionName)) {
       throw new Error(`未找到对应的函数: ${functionName}`);
     }
     return functionMap[functionName](...args);
@@ -251,6 +251,6 @@ const FormRender: React.FC<FormRenderProps> = ({ form, schema, dataSource }) => 
   )
 };
 
-export { useForm  }
+export { useForm }
 
 export default FormRender;
