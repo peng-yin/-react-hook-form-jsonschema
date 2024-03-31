@@ -19,7 +19,8 @@
     "dist"
   ],
   "scripts": {
-    "build": "rm -rf dist && rollup -c --configPlugin @rollup/plugin-typescript"
+    "build": "rm -rf dist && rollup -c --configPlugin @rollup/plugin-typescript",
+    "watch": "nodemon --watch src/index.tsx --exec rollup -c --configPlugin @rollup/plugin-typescript"
   },
   "peerDependencies": {
     "react": ">=16.8.0"

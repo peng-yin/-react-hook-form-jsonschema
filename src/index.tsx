@@ -1,38 +1,11 @@
 // @ts-nocheck
 import React from "react";
-import { Control, FieldValues, UseFormReturn, Controller } from 'react-hook-form';
-
-export { default as useForm } from 'react-hook-form';
-
-export interface FormItemProps {
-  errorClassName?: string;
-  control: Control<FieldValues>; 
-  [key: string]: any; // 允许额外的属性
-}
 
 export interface SchemaItem {
   field: string;
   component: React.ElementType | React.ReactNode;
   componentProps: Record<string, any>;
-  formItemProps?: FormItemProps;
-}
-
-export interface FormRenderProps {
-  form: UseFormReturn<FieldValues>;
-  schema: SchemaItem[];
-  dataSource: Record<string, any>; 
-}
-
-export interface FormItemControllerProps {
-  field: string;
-  errors?:  Record<string, any>; 
-  component: string | React.ReactNode;
-  componentProps?: Record<string, any>;
-  formItemProps?: {
-    control?: Control<FieldValues>;
-    errorClassName?: string;
-    [key: string]: any;
-  };
+  formItemProps?:  Record<string, any>;
 }
 
 interface ErrorBoundaryState {
@@ -125,29 +98,7 @@ const Component: React.FC = React.forwardRef(({ component, ...props }, ref) => {
   return <EnhancedComponent {...props} ref={ref} />;
 });
 
-const FormItemController = React.forwardRef<HTMLDivElement, FormItemControllerProps>((props, ref) => {
-  return (
-    <>
-      <Controller
-        ref={ref}
-        name={props.field}
-        {...props.formItemProps}
-        render={({ field }) => (
-          <Component
-            {...field}
-            {...props.componentProps}
-            component={props.component} 
-          />
-        )}
-      />
-      {props?.errors?.[props.field] && (
-        <div className={props.formItemProps?.errorClassName}>{props?.errors?.[props.field]?.message}</div>
-      )}
-    </>
-  )
-});
-
-const parseFunctionMarker = (marker, formValues) => {
+const parseFunctionMarker = (marker: string, formValues: Record<string, any>) => {
   const markerPattern = /#(\w+)\(([^)]*)\)/; // 匹配 #functionName(arg1, arg2, ...)
   const match = markerPattern.exec(marker);
   if (match) {
@@ -163,7 +114,7 @@ const parseFunctionMarker = (marker, formValues) => {
   return null;
 };
 
-const evaluateExpression = (expression, values) => {
+const evaluateExpression = (expression: string, values: Record<string, any>) => {
   const cleanedExpression = expression.replace(/{{|}}/g, '').trim();
   try {
     const keys = Object.keys(values);
@@ -216,6 +167,12 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
   }
 }
 
+export interface FormRenderProps {
+  schema: SchemaItem[];
+  dataSource: Record<string, any>;
+  renderFormItem: (value: any) => React.ReactNode
+}
+
 
 /**
  * 
@@ -224,29 +181,34 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
  * @param {*} dataSource： 数据源
  * @returns 
  */
-const FormRender: React.FC<FormRenderProps> = ({ form, schema, dataSource }) => {
+const FormRender: React.FC<FormRenderProps> = ({ schema, dataSource, renderFormItem }) => {
   if (!Array.isArray(schema)) {
     throw new Error('FormRender expects `schema` to be an array.');
   }
-  const { watch, control, formState: { errors } } = form
-  const formValues = watch(); // 获取所有表单字段的值
 
   return (
     <>
       {schema.map(item => {
-        const componentProps = resolveComponentProps(item.componentProps, { ...formValues, ...dataSource });
+        const componentProps = resolveComponentProps(item.componentProps, { ...dataSource });
         if (componentProps.hidden) {
           return null;
         }
+        console.log(componentProps);
+        
+        const formItemProps = {
+          FieldRender: React.forwardRef(({ field }, ref) => (
+            <Component
+              {...field}
+              ref={ref}
+              {...componentProps}
+              component={item.component}
+            />
+          )),
+          componentProps: { field: item.field, ...componentProps }
+        }
         return (
           <ErrorBoundary key={item.field}>
-            <FormItemController
-              field={item.field}
-              errors={errors}
-              component={item.component}
-              componentProps={componentProps}
-              formItemProps={{ ...item.formItemProps, control }}
-            />
+            {renderFormItem(formItemProps)}
           </ErrorBoundary>
         )
       })}
