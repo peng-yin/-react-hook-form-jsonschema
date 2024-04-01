@@ -193,8 +193,6 @@ const FormRender: React.FC<FormRenderProps> = ({ schema, dataSource, renderFormI
         if (componentProps.hidden) {
           return null;
         }
-        console.log(componentProps);
-        
         const formItemProps = {
           FieldRender: React.forwardRef(({ field }, ref) => (
             <Component
