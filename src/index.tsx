@@ -95,7 +95,7 @@ const Component: React.FC = ({ component, ...props }) => {
 
   const EnhancedComponent = React.useMemo(() => {
 
-    if (React.isValidElement(component) || typeof component === 'object') {
+    if (React.isValidElement(Component) || typeof Component === 'function' || typeof Component === 'object') {
       return component
     }
 
