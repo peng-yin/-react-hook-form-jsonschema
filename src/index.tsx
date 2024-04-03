@@ -58,13 +58,13 @@ type WithValueAsNumberProps = {
   onChange?: (value: number) => void;
 };
 
-const withValueAsNumber: React.FC<WithValueAsNumberProps> = WrappedComponent => (props, ref) => {
+const withValueAsNumber: React.FC<WithValueAsNumberProps> = WrappedComponent => (props) => {
   const handleChange = (e: any) => {
     if (typeof props.onChange === 'function') {
       props.onChange(parseInt(e.target.value, 10));
     }
   };
-  return <WrappedComponent {...props} ref={ref} onChange={handleChange} />;
+  return <WrappedComponent {...props} onChange={handleChange} />;
 };
 
 const internalMiddleware: Middleware[] = [{
@@ -92,7 +92,7 @@ function compose(...funcs: Function[]): Function {
 
 const Component: React.FC = ({ component, ...props }) => {
   const { componentsMap = {}, middlewares = [] } = React.useContext(FormControllerContext)
-
+  
   const middlewareList = [...internalMiddleware, ...middlewares].reduce((prev, middleware) => {
     const { hoc, filter } = middleware;
     if (typeof hoc !== 'function' || typeof filter !== 'function') {
@@ -103,21 +103,28 @@ const Component: React.FC = ({ component, ...props }) => {
     }
     return prev;
   }, []);
-  
+
   const EnhancedComponent = React.useMemo(() => {
     if (typeof component === 'string') {
-      if (!componentsMap || !Object.keys(componentsMap).includes(component)) {
+      const ComponentFromMap = componentsMap[component];
+      if (!ComponentFromMap) {
         throw new Error(`未找到对应的组件: ${component}`);
       }
+      return ComponentFromMap
     }
-    if (React.isValidElement(component) || typeof component === 'function' || typeof component === 'object') {
-      return component
-    }
-    const NewComponent = componentsMap[component];
-    return NewComponent;
-  }, [component, internalMiddleware, middlewares, componentsMap]);
 
-  return compose(...middlewareList)(<EnhancedComponent {...props} />);
+    if (React.isValidElement(component) || typeof component === 'function' || typeof component === 'object') {
+      return component;
+    }
+
+    throw new Error(`无效的组件类型: ${typeof component}`);
+  }, [component, componentsMap]);
+
+  const ComposedComponent = compose(...middlewareList)(EnhancedComponent)
+  
+  return React.useMemo(() => {
+    return <ComposedComponent {...props} />
+  }, [props])
 };
 
 const FormItemController = React.forwardRef((props, ref) => {
