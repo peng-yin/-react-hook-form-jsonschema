@@ -93,34 +93,31 @@ function compose(...funcs: Function[]): Function {
 const Component: React.FC = ({ component, ...props }) => {
   const { componentsMap = {}, middlewares = [] } = React.useContext(FormControllerContext)
 
-  const EnhancedComponent = React.useMemo(() => {
-
-    if (React.isValidElement(component) || typeof component === 'function' || typeof component === 'object') {
-      return component
+  const middlewareList = [...internalMiddleware, ...middlewares].reduce((prev, middleware) => {
+    const { hoc, filter } = middleware;
+    if (typeof hoc !== 'function' || typeof filter !== 'function') {
+      throw new Error('Middleware HOC or Middleware Filter is not a function');
     }
-
+    if (filter(props)) {
+      prev.push(hoc);
+    }
+    return prev;
+  }, []);
+  
+  const EnhancedComponent = React.useMemo(() => {
     if (typeof component === 'string') {
       if (!componentsMap || !Object.keys(componentsMap).includes(component)) {
         throw new Error(`未找到对应的组件: ${component}`);
       }
     }
-
+    if (React.isValidElement(component) || typeof component === 'function' || typeof component === 'object') {
+      return component
+    }
     const NewComponent = componentsMap[component];
-    const middlewareList = [...internalMiddleware, ...middlewares].reduce((prev, middleware) => {
-      const { hoc, filter } = middleware;
-      if (typeof hoc !== 'function' || typeof filter !== 'function') {
-        throw new Error('Middleware HOC or Middleware Filter is not a function');
-      }
-      if (filter(props)) {
-        prev.push(hoc);
-      }
-      return prev;
-    }, []);
-
-    return compose(...middlewareList)(NewComponent);
+    return NewComponent;
   }, [component, internalMiddleware, middlewares, componentsMap]);
 
-  return <EnhancedComponent {...props} />;
+  return compose(...middlewareList)(<EnhancedComponent {...props} />);
 };
 
 const FormItemController = React.forwardRef((props, ref) => {
