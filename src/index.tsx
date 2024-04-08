@@ -164,6 +164,7 @@ const parseFunctionMarker = (marker, formValues) => {
 };
 
 const evaluateExpression = (expression, values) => {
+  if(!Object.keys(values).length) return 
   const cleanedExpression = expression.replace(/{{|}}/g, '').trim();
   try {
     const keys = Object.keys(values);
@@ -173,6 +174,8 @@ const evaluateExpression = (expression, values) => {
     throw new Error(`Error evaluating expression: ${expression}`);
   }
 };
+
+console.log(evaluateExpression( "{{!['Orange', 'Pear'].includes(age) }}", { age: 'Orange' }));
 
 const resolveComponentProps = (componentProps, dataSource) => {
   const resolvedProps = {};
