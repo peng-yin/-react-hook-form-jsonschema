@@ -22,117 +22,87 @@ npm i react-hook-form-jsonschema-builder
 
 ## Usage
 
-> simple
-
 ```jsx
-import FormRender, { useForm } from "react-hook-form-jsonschema-builder";
-import { Input, Checkbox, Radio } from "antd";
 
-const schema = [
-  {
-    field: "name",
-    component: "input",
-    componentProps: {
-      addonBefore: "http://",
-    },
-  },
-  {
-    field: "age",
-    component: "checkbox",
-    componentProps: {
-      options: [
-        { label: "Apple", value: "Apple" },
-        { label: "Pear", value: "Pear" },
-        { label: "Orange", value: "Orange" },
-      ],
-    },
-  },
-  {
-    field: "work",
-    component: "radio",
-    componentProps: {
-      options: [
-        { label: "Apple", value: "Apple" },
-        { label: "Pear", value: "Pear" },
-        { label: "Orange", value: "Orange" },
-      ],
-    },
-  },
-];
-
-const componentsMap: Record<string, any> = {
-  input: Input,
-  checkbox: Checkbox.Group,
-  radio: Radio.Group,
-};
-
-const getSchema = () => {
-  return schema.map(({ component, componentProps, ...otherProps }) => {
-    let resolvedComponent = component;
-    if (typeof component === "string") {
-      resolvedComponent = componentsMap[component];
-    }
-    return { component: resolvedComponent, componentProps, ...otherProps };
-  });
-};
-
-export default function App() {
-  const formInstance = useForm({
-    defaultValues: {},
-  });
-
-  const { handleSubmit } = formInstance;
-
-  const onSubmit = (data) => console.log(data);
-
-  return (
-    <form onSubmit={handleSubmit(onSubmit)}>
-      <FormRender form={formInstance} schema={getSchema()} />
-      <button type="submit">Submit</button>
-    </form>
-  );
-}
-
-```
-
-> advanced
-
-
-```jsx
 import FormRender, {
   useForm,
   FormControllerContext,
 } from "react-hook-form-jsonschema-builder";
-import { Input, Checkbox, Radio } from "antd";
+import { Input, Checkbox, Radio, Button } from "tdesign-react";
 
 const schema = [
-  {
-    field: "name",
-    component: "input",
-    componentProps: {
-      addonBefore: "http://",
+    {
+      "field": "name",
+      "component": "input",
+      "componentProps": {
+        "name": "姓名",
+        "withwrapper": "true"
+      }
     },
-  },
-  {
-    field: "age",
-    component: "checkbox",
-    componentProps: {
-      options: [
-        { label: "Apple", value: "Apple" },
-        { label: "Pear", value: "Pear" },
-        { label: "Orange", value: "Orange" },
-      ],
+    {
+      "field": "work",
+      "component": "radio",
+      "componentProps": {
+        "name": "工作",
+        "withwrapper": "true",
+        "options": [
+          {
+            "label": "Apple",
+            "value": "Apple"
+          },
+          {
+            "label": "Pear",
+            "value": "Pear"
+          },
+          {
+            "label": "Orange",
+            "value": "Orange"
+          }
+        ]
+      }
     },
-  },
+    {
+      "field": "age",
+      "component": "checkbox",
+      "componentProps": {
+        "name": "性别",
+        "withwrapper": "true",
+        "disabled": "{{ work == 'Apple' }}",
+        "hidden": "{{ ['Orange'].includes(work) }}",
+        "options": [
+          {
+            "label": "Apple",
+            "value": "Apple"
+          },
+          {
+            "label": "Pear",
+            "value": "Pear"
+          },
+          {
+            "label": "Orange",
+            "value": "Orange"
+          }
+        ]
+      }
+    }
+  ]
+
+const FormItemWrapper = (WrappedComponent: any) => (props: any) => {
+  return (
+    <div className="form-item">
+      <div className="label">{props.name}</div>
+      <div className="value">
+        <WrappedComponent {...props} />
+      </div>
+    </div>
+  );
+};
+
+const middlewares = [
   {
-    field: "work",
-    component: "radio",
-    componentProps: {
-      options: [
-        { label: "Apple", value: "Apple" },
-        { label: "Pear", value: "Pear" },
-        { label: "Orange", value: "Orange" },
-      ],
+    hoc: FormItemWrapper,
+    filter(props: any) {
+      return props.withwrapper;
     },
   },
 ];
@@ -144,7 +114,7 @@ const componentsMap: Record<string, any> = {
 };
 
 const functionMap = {
-  getDynamicTip: (value) => {
+  getDynamicTip: (value: any) => {
     return `${value} aaaaaaaaa`;
   },
 };
@@ -154,18 +124,22 @@ export default function App() {
     defaultValues: {},
   });
 
-  const { handleSubmit } = formInstance;
-
-  const onSubmit = (data) => console.log(data);
+  const { handleSubmit, watch } = formInstance;
+   const formValues = watch(); // 获取所有表单字段的值
+  console.log(formValues);
+  
+  const onSubmit = (data: any) => console.log(data);
 
   return (
     <FormControllerContext.Provider
-      value={{ componentsMap, middlewares: [], functionMap }}
+      value={{ componentsMap, middlewares, functionMap }}
     >
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <FormRender dataSource={{}} form={formInstance} schema={schema} />
-        <button type="submit">Submit</button>
-      </form>
+       <form onSubmit={handleSubmit(onSubmit)}>
+          <FormRender dataSource={{}} form={formInstance} schema={schema} />
+          <Button theme="primary" type="submit" className="btn-submit">
+            提交
+          </Button>
+        </form>
     </FormControllerContext.Provider>
   );
 }
